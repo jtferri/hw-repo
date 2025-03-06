@@ -1,35 +1,36 @@
-#IMF, UN, World Bank reported numbers streamlit app
+# IMF, UN, World Bank reported numbers streamlit app
 
-#load packages
+# Load packages
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from IPython.display import IFrame
 
-#load website content and parse page
+# Load website content and parse page
 url = 'https://en.wikipedia.org/wiki/List_of_countries_by_GDP_(nominal)'  # Example URL
 page = requests.get(url)
 bs4page = BeautifulSoup(page.text, 'lxml')
 
-#find table, read into pd df
+# Find table, read into pd df
 table = bs4page.find('table', {'class': 'wikitable'})
 GDP = pd.read_html(str(table))[0]
 
-#check columns, need flattening? 
+# Check columns, need flattening? 
 print("Columns in the DataFrame:")
 print(GDP.columns)
 GDP.columns = [' '.join(col).strip() if isinstance(col, tuple) else col for col in GDP.columns]
 print("Flattened columns in the DataFrame:")
 print(GDP.columns)
 
-# identify column names for renaming
+# Identify column names for renaming
 print("Columns in the DataFrame before renaming:")
 print(GDP.columns)
 GDP = GDP.rename(columns={
-    'Country/Territory': 'Country',
-    'IMF[1][12] Forecast': 'GDP (IMF$Forecast)'
+    'Country/Territory Country/Territory': 'Country',
+    'IMF[1][12] Forecast': 'GDP (IMF$Forecast)',
+    'United Nations[14] Estimate': 'GDP (UN$Estimate)',
+    'World Bank[13] Estimate': 'GDP (WorldBank$Estimate)'
 })
 
 # Inspect the columns of the DataFrame after renaming
@@ -40,28 +41,28 @@ print(GDP.columns)
 GDP['GDP (IMF$Forecast)'] = GDP['GDP (IMF$Forecast)'].replace('—', pd.NA)
 GDP['GDP (UN$Estimate)'] = GDP['GDP (UN$Estimate)'].replace('—', pd.NA)
 GDP['GDP (WorldBank$Estimate)'] = GDP['GDP (WorldBank$Estimate)'].replace('—', pd.NA)
-GDP = GDP.dropna(subset=['GDP (IMF$Forecast)'])
+GDP = GDP.dropna(subset=['GDP (IMF$Forecast)', 'GDP (UN$Estimate)', 'GDP (WorldBank$Estimate)'])
 
-# Convert GDP column to float
+# Convert GDP columns to float
 GDP['GDP (IMF$Forecast)'] = GDP['GDP (IMF$Forecast)'].astype(str).str.replace(',', '').astype(float)
 GDP['GDP (UN$Estimate)'] = GDP['GDP (UN$Estimate)'].astype(str).str.replace(',', '').astype(float)
 GDP['GDP (WorldBank$Estimate)'] = GDP['GDP (WorldBank$Estimate)'].astype(str).str.replace(',', '').astype(float)
 
-#load wikipedia page for countries list (missing from updated IMF table page)
+# Load Wikipedia page for countries list (missing from updated IMF table page)
 url2 = "https://en.wikipedia.org/wiki/List_of_countries_and_territories_by_the_United_Nations_geoscheme"
 page2 = requests.get(url2)
 bs4page2 = BeautifulSoup(page2.text, 'lxml')
 table = bs4page2.find('table', {'class': 'wikitable'})
 UNregion = pd.read_html(str(table))[0]
 
-#check columns and rename
-print("columns in dataframe:")
+# Check columns and rename
+print("Columns in the DataFrame:")
 print(UNregion.columns)
 UNregion = UNregion.rename(columns={
     'Country or Area': 'Country',
     'Geographical subregion': 'Region'
 })
-print("columns in dataframe:")
+print("Columns in the DataFrame:")
 print(UNregion.columns)
 
 # Merge GDP and UNregion dataframes on the 'Country' column
