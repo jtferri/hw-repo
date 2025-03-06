@@ -3,7 +3,7 @@
 
 import streamlit as st
 import folium
-from streamlit_folium import folium_static
+
 
 def main():
     st.title("Longitude and Latitude Map")
